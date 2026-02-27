@@ -23,10 +23,7 @@ https://it.aliexpress.com/item/1005001637061380.html
 https://it.aliexpress.com/item/1005002550688671.html
 
 ### 0,39" Display: choose the option with colors!
-Wärmebild-Nachtsicht-Teleskop-Sucher, 0,39 Zoll Miniatur-Display - AliExpress 1420
-
-alternative display link: 
-0.39 Inch OLED Display Viewfinder for FPV Drone Aerial Photography 1024*768 Micro AV HDMI Thermal Imaging Night Vision Device - AliExpress 502
+https://it.aliexpress.com/item/1005007905243096.html
 
 ### ESP32 
 https://de.aliexpress.com/item/1005008212278653.html
@@ -50,10 +47,10 @@ JUIDINTO 10–30 Stück Torx-Rundkopfschraube M2 M2,5 M3 M4 M6 schwarz plattiert
 5 Stück Kameras ch raube Mutter 1/4 bis 3/8 Zoll Konvertierungs schrauben Standard adapters ch raube Schnell spann schraube Stativ halterung Adapters ch raube - AliExpress
 
 ### USB C Charging board: 
-2IN1 Lithium-Ladegerät Ladeschutz/Schutzplatine Combo Typ-C PD USB TP4056 1A 1S 5V 3,7V 18650 Li-Ion Lipo CELL - AliExpress
+https://it.aliexpress.com/item/4001046570639.html
 
 ### RunCam DVR Micro SD Recorder addon (optional): 
-RunCam Mini FPV DVR Verlustfreier Videoausgang für Mini FPV Racing Drone Quadcopter - AliExpress 26
+https://it.aliexpress.com/item/1005008678943146.html
 
 ### Lipo 3,7 V 102540 1100 mAh (2! I suggest to buy 3, some found to be defected)
 https://it.aliexpress.com/item/1005006278332065.html
