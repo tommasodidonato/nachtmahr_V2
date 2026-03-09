@@ -10,3 +10,14 @@ This is a WIP, completely based on the great work of Lupus Worax. Many guides ca
 
 ### ESP Firmware
 The last firmware to use can be found here: https://discord.com/channels/1336624444369670154/1337755087228895282 
+
+### Build guide
+Building the Nachtmahr v2 is very similar to V1, and you can find the guide [here](https://docs.google.com/document/d/1FID4HvsZnoMsb9pfEZISi7Dp_-eUuumutZ-1HBHcEDI/edit?usp=drive_link).
+
+### Printing tips
+You can use whatever material you like best. PLA is ok, as long as you don't plan to leave it in the car during the hot season. The images you see here refer to my build in ASA. I strongly suggest 4 walls, infill at least 15%, line height 0.2 is ok. For TPU, I printed with 0.16 line height. 
+Supports are mandatory for many parts, settings depend on your printer (I used tree structure, 0.4 distance from x/y, density 70%). If you plan to use ASA or other shrinking materials, print accordingly; I strongly suggest to do a dimensional test print before printing everything. I also enlarged the scre holes with a drill before the assembly (it will saves you a lot of heachaches)
+
+### General tips
+Charge your LiPo batteries separately before assembling the power block. 
+**Remember to remove the A and B resistance** from the boost converter. Before going on, double check with a multimeter that the booster output is really 5V... 
