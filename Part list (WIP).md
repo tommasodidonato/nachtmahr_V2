@@ -35,16 +35,19 @@ or on aliexpress:
 https://de.aliexpress.com/item/1005002332868366.html 10 pairs 5P 
 
 ### Brass heat melt inserts: M3 ( 100 pieces) 
-M2 M3 M4 M5 M6 M8 Messing Wärmeeinsatz Mutter Sortiment Set Hot Melt Rändelgewindeeinsatz Einbettung Kupfer Mutter 3D-Druck Nutinsert - AliExpress 13
+https://it.aliexpress.com/item/1005005789416899.html
 
 ### Grub screws for focus ring: M2,5 5mm
-Klasse 12,9 schwarzer Kohlenstoffs tahl Sechs kant Innen sechs kant Innen sechs kant schraube Kegels pitze Maden Stellschrauben Schrauben m2 m2, 5 m3 m4 m5 m6 m8 m10 - AliExpress 13
+https://it.aliexpress.com/item/1005007404470826.html
 
-### Main case screws: M3 16mm (20 pcs) 
-JUIDINTO 10–30 Stück Torx-Rundkopfschraube M2 M2,5 M3 M4 M6 schwarz plattiert sechs Lappen Torx-Flachkopfschraube - AliExpress 13
+### Main case screws: M3 16mm (20 pcs)
+https://it.aliexpress.com/item/1005008082257314.html
+
+### Front tube screws: M3 25mm 
+https://it.aliexpress.com/item/1005006427396773.html
 
 ### Camera screw inserts: 
-5 Stück Kameras ch raube Mutter 1/4 bis 3/8 Zoll Konvertierungs schrauben Standard adapters ch raube Schnell spann schraube Stativ halterung Adapters ch raube - AliExpress
+https://it.aliexpress.com/item/1005005468090661.html
 
 ### USB C Charging board: 
 https://it.aliexpress.com/item/4001046570639.html
