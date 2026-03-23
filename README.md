@@ -20,6 +20,7 @@ The last firmware to use can be found here: https://discord.com/channels/1336624
 
 ### Build guide
 Building the Nachtmahr v2 is very similar to V1, and you can find the guide [here](https://docs.google.com/document/d/1FID4HvsZnoMsb9pfEZISi7Dp_-eUuumutZ-1HBHcEDI/edit?usp=drive_link). The main difference is related to the 2 push buttons (the one for DVR and the one on the main body). You have to cut out 2 of the 4 pins (check with a multimeter which one to keep), and file the button so it can fit perfectly in the home. Sold the 2 wires before inserting it, and then you're good to go.
+The complete wiring schematics can be found [here](https://github.com/tommasodidonato/nachtmahr_V2/blob/main/wiring%20nachtmahr%202.jpg)
 
 ### Printing tips
 You can use whatever material you like best. PLA is ok, as long as you don't plan to leave it in the car during the hot season. The images you see here refer to my build in ASA. I strongly suggest 4 walls, infill at least 15%, line height 0.2 is ok. For TPU, I printed with 0.16 line height. 
