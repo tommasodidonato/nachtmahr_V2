@@ -29,3 +29,4 @@ Supports are mandatory for many parts, settings depend on your printer (I used t
 ### General tips
 Charge your LiPo batteries separately before assembling the power block. 
 **Remember to remove the A and B resistance** from the boost converter. Before going on, double check with a multimeter that the booster output is really 5V... 
+When glueing the power button and the rotary encoder, do not use normal super glue (if it goes into the button, then you will have to change it!). I suggest the gel one.
