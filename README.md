@@ -24,7 +24,7 @@ The complete wiring schematics can be found [here](https://github.com/tommasodid
 
 ### Printing tips
 You can use whatever material you like best. PLA is ok, as long as you don't plan to leave it in the car during the hot season. The images you see here refer to my build in ASA. I strongly suggest 4 walls, infill at least 15%, line height 0.2 is ok. For TPU, I printed with 0.16 line height. 
-Supports are mandatory for many parts, settings depend on your printer (I used tree structure, 0.4 distance from x/y, density 70%). If you plan to use ASA or other shrinking materials, print accordingly; I strongly suggest to do a dimensional test print before printing everything. I also enlarged the scre holes with a drill before the assembly (it will saves you a lot of heachaches)
+Supports are mandatory for many parts, settings depend on your printer (I used tree structure, 0.4 distance from x/y, density 70%). If you plan to use ASA or other shrinking materials, print accordingly; I strongly suggest to do a dimensional test print before printing everything. I also enlarged the screw holes with a drill before the assembly (it will saves you a lot of heachaches)
 
 ### General tips
 Charge your LiPo batteries separately before assembling the power block. 
