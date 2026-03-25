@@ -1,0 +1,293 @@
+// --- V1.27a   fix some bouncing problems
+#include <WiFi.h>
+#include <ESPmDNS.h>
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
+#include <HardwareSerial.h>
+#include <AiEsp32RotaryEncoder.h>
+#include <Preferences.h>
+
+// --- WiFi & Preferences ---
+const char* ssid = "XXXXXXXXXXX";
+const char* password = "XXXXXXXXXXXXXXXX";
+Preferences preferences;
+
+#define ROTARY_A_PIN    0
+#define ROTARY_B_PIN    1
+#define ROTARY_SW_PIN   6
+#define THUMB_BUTTON    7
+#define LED_BLUE        8
+#define RX_PIN          20
+#define TX_PIN          21
+#define N6_BAUD         115200
+
+#define LED_OFF HIGH
+#define LED_ON  LOW
+
+// --- Enhancement Variables ---
+uint8_t enhanceLevels[] = {0x00, 0x15, 0x2A, 0x40, 0x55, 0x6A, 0x7F};
+int currentEnhanceIdx = 0;
+#define TOTAL_ENHANCE_STEPS 7
+unsigned long lastEnhanceStep = 0;
+
+// --- Global State ---
+bool wifiActive = false;
+unsigned long thumbDownTime = 0;
+unsigned long encDownTime = 0;
+unsigned long lastButtonPress = 0; // Debounce per pulsante encoder
+bool wifiTriggered = false;
+bool hintBlinkDone = false;
+bool enhanceCycling = false;
+bool dpcActive = false;
+bool autoCalEnabled = false;
+bool wasRotated = false;
+int movementCounter = 0;
+int currentBrightness = 64;
+int currentContrast = 64;
+int stepSize = 4;
+int contrastStep = 10;
+unsigned long lastAdjustmentTime = 0;
+bool needsSaving = false;
+
+uint8_t zooms[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+int currentZoomStep = 0;
+int currentPalette = 0;
+
+AiEsp32RotaryEncoder rotaryEncoder = AiEsp32RotaryEncoder(ROTARY_A_PIN, ROTARY_B_PIN, ROTARY_SW_PIN, -1, 4);
+void IRAM_ATTR readEncoderISR() {
+    rotaryEncoder.readEncoder_ISR();
+}
+
+void triggerMultiBlink(int count) {
+  for(int i = 0; i < count; i++) {
+    digitalWrite(LED_BLUE, LED_ON);
+    delay(60);
+    digitalWrite(LED_BLUE, LED_OFF); delay(60);
+  }
+}
+
+void sendN6(uint8_t cmdID, uint8_t val) {
+  uint8_t frame[] = { 0x23, 0x57, cmdID, 0x02, 0x00, val, 0x00, (uint8_t)(cmdID + 0x02 + val), 0x45, 0x4E, 0x44 };
+  Serial1.write(frame, sizeof(frame));
+}
+
+void sendImageParam(uint8_t subId, uint8_t value) {
+  uint8_t cs = (uint8_t)(0x99 + 0x02 + subId + value);
+  uint8_t frame[] = { 0x23, 0x57, 0x99, 0x02, 0x00, subId, value, cs, 0x45, 0x4E, 0x44 };
+  Serial1.write(frame, sizeof(frame));
+}
+
+void setAutoCalibration(bool enable, bool firstBoot = false) {
+  autoCalEnabled = enable;
+  uint8_t val = enable ? 0x0D : 0x01;
+  uint8_t frame[] = { 0x23, 0x57, 0x67, 0x02, 0x00, val, 0x00, 0x00, 0x45, 0x4E, 0x44 };
+  Serial1.write(frame, sizeof(frame));
+  if(!firstBoot) {
+    Serial.print("AutoCal: "); Serial.println(enable ? "ON" : "OFF");
+    triggerMultiBlink(enable ? 4 : 8);
+  }
+
+  preferences.begin("n6-settings", false);
+  preferences.putBool("autocal", autoCalEnabled);
+  preferences.end();
+}
+
+void runDeadPixelCorrection() {
+  dpcActive = true;
+  Serial.println("DPC START (Manual Sequence)...");
+  sendN6(0x05, 0x00);
+  delay(1200);
+
+  uint8_t dpcRun[] = { 0x23, 0x57, 0x67, 0x03, 0x00, 0x07, 0x10, 0x00, 0x00, 0x45, 0x4E, 0x44 };
+  Serial1.write(dpcRun, sizeof(dpcRun));
+
+  unsigned long startWait = millis();
+  while (millis() - startWait < 5000) {
+    digitalWrite(LED_BLUE, (millis() % 1000 < 500) ? LED_ON : LED_OFF);
+    yield();
+  }
+
+  startWait = millis();
+  while (millis() - startWait < 5000) {
+    digitalWrite(LED_BLUE, (millis() % 200 < 100) ? LED_ON : LED_OFF);
+    yield();
+  }
+
+  uint8_t dpcSave[] = { 0x23, 0x57, 0x67, 0x02, 0x00, 0x08, 0x00, 0x00, 0x45, 0x4E, 0x44 };
+  Serial1.write(dpcSave, sizeof(dpcSave));
+
+  triggerMultiBlink(3);
+  dpcActive = false;
+  Serial.println("DPC SEQUENCE COMPLETE");
+}
+
+void saveCurrentSettings() {
+  preferences.begin("n6-settings", false);
+  preferences.putInt("bright", currentBrightness);
+  preferences.putInt("contrast", currentContrast);
+  preferences.end();
+  needsSaving = false;
+  digitalWrite(LED_BLUE, LED_ON); delay(150); digitalWrite(LED_BLUE, LED_OFF);
+  Serial.println("Settings saved to Preferences.");
+}
+
+void setup() {
+  Serial.begin(115200);
+  Serial1.begin(N6_BAUD, SERIAL_8N1, RX_PIN, TX_PIN);
+  pinMode(ROTARY_A_PIN, INPUT_PULLUP);
+  pinMode(ROTARY_B_PIN, INPUT_PULLUP);
+  pinMode(ROTARY_SW_PIN, INPUT_PULLUP);
+  pinMode(THUMB_BUTTON, INPUT_PULLUP);
+  pinMode(LED_BLUE, OUTPUT);
+  digitalWrite(LED_BLUE, LED_OFF);
+
+  rotaryEncoder.begin();
+  rotaryEncoder.setup(readEncoderISR);
+  rotaryEncoder.setBoundaries(-100000, 100000, false);
+  rotaryEncoder.setEncoderValue(0);
+  rotaryEncoder.encoderChanged();
+  attachInterrupt(digitalPinToInterrupt(ROTARY_A_PIN), readEncoderISR, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ROTARY_B_PIN), readEncoderISR, CHANGE);
+
+  WiFi.mode(WIFI_OFF);
+
+  preferences.begin("n6-settings", true);
+  autoCalEnabled = preferences.getBool("autocal", false);
+  currentBrightness = preferences.getInt("bright", 64);
+  currentContrast = preferences.getInt("contrast", 64);
+  preferences.end();
+  if (currentContrast < 30 || currentContrast > 110) currentContrast = 64;
+
+  delay(7500);
+  for(int i=0; i<2; i++){
+    sendImageParam(0x00, (uint8_t)currentBrightness);
+    sendImageParam(0x01, (uint8_t)currentContrast);
+    sendImageParam(0x03, 0x00);
+    delay(150);
+  }
+
+  setAutoCalibration(autoCalEnabled, true);
+  triggerMultiBlink(3);
+  Serial.println("N6 Controller Ready.");
+}
+
+void loop() {
+  while(Serial1.available() > 0) { Serial.write(Serial1.read()); }
+
+  int delta = rotaryEncoder.encoderChanged();
+  if (wifiActive) ArduinoOTA.handle();
+  unsigned long now = millis();
+  bool isShifted = (digitalRead(THUMB_BUTTON) == LOW);
+  bool isEncDown = (digitalRead(ROTARY_SW_PIN) == LOW);
+
+  if (needsSaving && (now - lastAdjustmentTime > 3000)) {
+    saveCurrentSettings();
+  }
+
+  if (wifiActive) {
+    if (WiFi.status() == WL_CONNECTED) {
+      digitalWrite(LED_BLUE, LED_ON);
+    } else {
+      digitalWrite(LED_BLUE, (now % 1000 < 500) ? LED_ON : LED_OFF);
+    }
+  }
+
+  if (delta != 0) {
+    if (isShifted) {
+      movementCounter += abs(delta);
+      if (movementCounter > 1) wasRotated = true;
+      currentBrightness = constrain(currentBrightness + (delta * stepSize), 0, 127);
+      sendImageParam(0x00, (uint8_t)currentBrightness);
+      lastAdjustmentTime = now;
+      needsSaving = true;
+    } else {
+      currentZoomStep = constrain(currentZoomStep + delta, 0, 7);
+      sendN6(0x44, zooms[currentZoomStep]);
+    }
+  }
+
+  if (isEncDown) {
+    if (encDownTime == 0) encDownTime = now;
+    if (isShifted && !dpcActive && (now - encDownTime >= 5000)) {
+      runDeadPixelCorrection();
+      encDownTime = 0;
+      wasRotated = true;
+    }
+    else if (!isShifted && (now - encDownTime >= 1500)) {
+      if (!enhanceCycling || (now - lastEnhanceStep >= 1500)) {
+        enhanceCycling = true;
+        lastEnhanceStep = now;
+        currentEnhanceIdx = (currentEnhanceIdx + 1) % TOTAL_ENHANCE_STEPS;
+        sendImageParam(0x03, enhanceLevels[currentEnhanceIdx]);
+        digitalWrite(LED_BLUE, LED_ON); delay(50); digitalWrite(LED_BLUE, LED_OFF);
+      }
+    }
+  } else {
+    if (encDownTime > 0) {
+      // APPLICO DEBOUNCE: Esegui solo se sono passati almeno 250ms dall'ultimo comando
+      if (!enhanceCycling && !dpcActive && (now - lastButtonPress > 250)) {
+        if (isShifted) {
+            wasRotated = true;
+            currentContrast += contrastStep;
+            if (currentContrast > 110) currentContrast = 30;
+            sendImageParam(0x01, (uint8_t)currentContrast);
+            lastAdjustmentTime = now;
+            needsSaving = true;
+            if (currentContrast >= 60 && currentContrast <= 70) triggerMultiBlink(2);
+            else { digitalWrite(LED_BLUE, LED_ON); delay(40); digitalWrite(LED_BLUE, LED_OFF); }
+        }
+        else {
+            currentPalette = (currentPalette + 1) % 5;
+            sendN6(0x23, (uint8_t)currentPalette);
+        }
+        lastButtonPress = now; // Aggiorna il tempo dell'ultima pressione valida
+      }
+      encDownTime = 0; enhanceCycling = false;
+    }
+  }
+
+  if (isShifted) {
+    if (thumbDownTime == 0) {
+      thumbDownTime = now;
+      wifiTriggered = false;
+      wasRotated = false;
+      movementCounter = 0;
+      hintBlinkDone = false;
+    }
+    if (!wasRotated) {
+      if (now - thumbDownTime >= 3000 && !hintBlinkDone) {
+        digitalWrite(LED_BLUE, LED_ON); delay(50); digitalWrite(LED_BLUE, LED_OFF);
+        hintBlinkDone = true;
+        Serial.println("WiFi Toggle/Cal Hint reached (3s)");
+      }
+      if (!wifiTriggered && (now - thumbDownTime >= 5000)) {
+         wifiActive = !wifiActive;
+         triggerMultiBlink(5);
+         if (wifiActive) {
+           Serial.println("WiFi Enabling...");
+           WiFi.mode(WIFI_STA); WiFi.begin(ssid, password); ArduinoOTA.begin();
+         }
+         else {
+           Serial.println("WiFi Disabling...");
+           WiFi.disconnect(true);
+           WiFi.mode(WIFI_OFF); digitalWrite(LED_BLUE, LED_OFF);
+         }
+         wifiTriggered = true;
+      }
+    }
+  } else {
+    if (thumbDownTime > 0) {
+      unsigned long holdTime = now - thumbDownTime;
+      if (!wasRotated && !wifiTriggered) {
+        if (holdTime >= 3000 && holdTime < 5000) {
+          setAutoCalibration(!autoCalEnabled);
+        }
+        else if (holdTime < 1000) {
+          Serial.println("Manual Calibration (NUC) Triggered.");
+          sendN6(0x05, 0x00);
+        }
+      }
+      thumbDownTime = 0;
+    }
+  }
+}
